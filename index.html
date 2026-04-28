@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kursus Inggris - 32 Lessons</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+        }
+        body {
+            background: #f0f4f8;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        .sidebar {
+            flex: 1;
+            min-width: 220px;
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+        .sidebar h2 {
+            font-size: 1.2rem;
+            margin-bottom: 16px;
+            color: #1e3a5f;
+            border-left: 4px solid #3b82f6;
+            padding-left: 12px;
+        }
+        .lesson-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .lesson-btn {
+            background: #f1f5f9;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 12px;
+            text-align: left;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #334155;
+        }
+        .lesson-btn:hover {
+            background: #e2e8f0;
+        }
+        .lesson-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+        .content {
+            flex: 3;
+            min-width: 300px;
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .audio-section {
+            background: #f8fafc;
+            padding: 16px 20px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            border: 1px solid #e2e8f0;
+        }
+        .audio-section label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 10px;
+            color: #1e3a5f;
+        }
+        audio {
+            width: 100%;
+        }
+        .materi-frame {
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            background: white;
+        }
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #94a3b8;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="sidebar">
+        <h2>📚 Pilih Lesson</h2>
+        <div class="lesson-list" id="lessonList"></div>
+    </div>
+    <div class="content" id="contentArea">
+        <div class="loading">
+            🎧 Pilih lesson di samping untuk mulai belajar<br>
+            Materi akan tampil lengkap dengan gambar
+        </div>
+    </div>
+</div>
+
+<script>
+    const TOTAL_LESSONS = 32;
+
+    function generateButtons() {
+        const container = document.getElementById('lessonList');
+        container.innerHTML = '';
+        
+        for (let i = 1; i <= TOTAL_LESSONS; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'lesson-btn';
+            btn.textContent = `Lesson ${i}`;
+            btn.onclick = () => loadLesson(i);
+            container.appendChild(btn);
+        }
+    }
+
+    function loadLesson(lessonNum) {
+        // Highlight tombol aktif
+        document.querySelectorAll('.lesson-btn').forEach((btn, idx) => {
+            btn.classList.remove('active');
+            if (idx + 1 === lessonNum) btn.classList.add('active');
+        });
+
+        const contentArea = document.getElementById('contentArea');
+        const lessonNumber = lessonNum.toString().padStart(2, '0');
+        
+        const materiUrl = `materi/${lessonNumber}.html`;
+        const audioUrl = `audio/${lessonNumber}.mp3`;
+
+        contentArea.innerHTML = `
+            <div class="audio-section">
+                <label>🎧 Audio Lesson ${lessonNum}</label>
+                <audio controls src="${audioUrl}">
+                    Browser tidak support audio. <a href="${audioUrl}">Download</a>
+                </audio>
+            </div>
+            <div class="loading" id="materiLoading">📄 Memuat materi lesson ${lessonNum}...</div>
+            <iframe id="materiFrame" class="materi-frame" style="width:100%; min-height:600px; display:none;"></iframe>
+        `;
+
+        const iframe = document.getElementById('materiFrame');
+        const loading = document.getElementById('materiLoading');
+
+        // Load file HTML materi
+        fetch(materiUrl)
+            .then(response => {
+                if (response.ok) {
+                    iframe.style.display = 'block';
+                    loading.style.display = 'none';
+                    iframe.src = materiUrl;
+                    
+                    // Atur tinggi iframe sesuai konten
+                    iframe.onload = () => {
+                        try {
+                            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                            const height = iframeDoc.body.scrollHeight;
+                            iframe.style.height = Math.max(height + 50, 600) + 'px';
+                        } catch(e) {
+                            iframe.style.height = '700px';
+                        }
+                    };
+                } else {
+                    loading.innerHTML = `
+                        <div style="background:#fee2e2; padding:20px; border-radius:12px;">
+                            ❌ File materi lesson ${lessonNum} tidak ditemukan.<br><br>
+                            <strong>Yang harus dilakukan:</strong><br>
+                            1. Buka file DOC lesson ${lessonNum} di Word<br>
+                            2. File → Save As → Pilih "Web Page (.html)"<br>
+                            3. Simpan sebagai <strong>${lessonNumber}.html</strong><br>
+                            4. Letakkan di folder <strong>materi/</strong><br>
+                            5. Pindahkan juga folder <strong>${lessonNumber}_files/</strong> (isi gambarnya) ke folder <strong>materi/</strong>
+                        </div>
+                    `;
+                }
+            })
+            .catch(() => {
+                loading.innerHTML = `<div style="background:#fee2e2; padding:20px; border-radius:12px;">❌ Gagal memuat materi lesson ${lessonNum}</div>`;
+            });
+    }
+
+    generateButtons();
+</script>
+</body>
+</html>
